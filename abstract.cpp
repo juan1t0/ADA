@@ -19,11 +19,15 @@ public:
 	bool digraph;
 	vector<bool> *visited;
 	vector<pair<float,int>> *dijkstar,*cola;
+	vector<Edge> *Aristas;
 	
 	virtual void remove(Edge)=0;
 	virtual bool edge(int, int)=0;
 	virtual void insert(Edge A)=0;
 	virtual vector<pair<int,float>> neighbor(int)=0;
+	virtual bool findETree(int u,int v,vector<vector<int>> &T);
+	virtual void unionTree(int u,int v,vector<vector<int>> &T);
+	virtual vector<Edge> Kruskal();
 	virtual void llenarDijkstra();
 	virtual void visi_reinicio();
 	virtual void dfs(int vertice);
@@ -41,18 +45,11 @@ public:
 void GRAPH::llenarDijkstra(){
 	float inflot = 1000.00;
 	dijkstar->assign(Vcnt,make_pair(inflot,-1));
-/*	for(int i=0;i<Vcnt;i++){
-		pair<float,int> temp;
-		temp = make_pair(inflot,-1);
-		dijkstar->at(i)=temp;
-	}*/
 }
 void GRAPH::visi_reinicio(){
-	cout<<",";
 	for(int j=0;j<Vcnt;j++){
 		visited->at(j)=false;
 	}
-	cout<<",\n";
 }
 bool GRAPH::allVisited(){
 	for(int i=0;i<Vcnt;i++)
@@ -138,7 +135,6 @@ void GRAPH::bfs(int vertice){
 	cout<<endl;
 }
 void GRAPH::SigismudDijkstra(int vertice,float we,int pre){
-//	cout<<".";
 	if(visited->at(vertice)== true)
 		return;
 	
@@ -164,7 +160,6 @@ void GRAPH::SigismudDijkstra(int vertice,float we,int pre){
 					cola->insert(cola->begin()+j,make_pair(aux,vecinos[i].first));
 				}
 			}
-			
 		}
 	}
 	visited->at(vertice)=true;
@@ -172,27 +167,19 @@ void GRAPH::SigismudDijkstra(int vertice,float we,int pre){
 		SigismudDijkstra(cola->at(cola->size()-1).second,cola->at(cola->size()-1).first,vertice);
 		if(cola->size()!=0)
 			cola->pop_back();
-		
 	}
 	return;
 }
 void GRAPH::Dijkstra(int vertice,float we,int pre){
 	llenarDijkstra();
 	visi_reinicio();
-	
 	dijkstar->at(vertice).first=we;
 	dijkstar->at(vertice).second=pre;
 	cola->push_back(make_pair(we,vertice));
 	while(!(cola->size()==0)){
-//		cout<<".";
 		float aux = we;
 		vector<pair<int,float>> vecinos=neighbor(vertice);
 		unsigned int s = vecinos.size();
-		/*cout<<"{";
-		for(int o=0;o<cola->size();o++){
-			cout<<cola->at(o).second<<";";
-		}
-		cout<<endl;*/
 		cola->pop_back();
 		for (int i=0 ;i<s; i++){
 			if (visited->at(vecinos[i].first)== false){
@@ -208,33 +195,89 @@ void GRAPH::Dijkstra(int vertice,float we,int pre){
 						}						
 						cola->insert(cola->begin()+j,make_pair(aux,vecinos[i].first));
 					}
-					//cout<<"-";
 				}
-
 			}
 		}
-//		cout<<vertice;
 		visited->at(vertice)=true;
-		
-//		cout<<"|"<<vertice<<"|";
-	//	cola->pop_back();
 		if(cola->size()!=0){
 			vertice = cola->at(cola->size()-1).second;
 			we = cola->at(cola->size()-1).first;
 		}
-	/*	cout<<"[";
-		for(int o=0;o<cola->size();o++){
-			cout<<cola->at(o).second<<" ";
+	}
+}
+bool GRAPH::findETree(int u,int v,vector<vector<int>> &T){
+//bool GRAPH::findTree(int u, int v, vector<vector<int>> &T){
+	int i,j,pu,pv;
+	bool bu,bv;
+	bu=bv=false;
+	unsigned int s = T.size();
+	for(i=0;i<s and (!bu or !bv);i++){
+		unsigned int ss = T[i].size();
+		for(j=0;j<ss and !bu;j++){
+			if(T[i][j]==u){
+				pu = i;
+				bu=true;
+				break;
+			}
 		}
-		cout<<"]"<<endl;*/
+		for(j=0;j<ss and !bv;j++){
+			if(T[i][j]==v){
+				pv = i;
+				bv=true;
+				break;
+			}
+		}
 	}
-/*
-	while(!(cola->size()== 0)){
-		SigismudDijkstra(cola->at(cola->size()-1).second,cola->at(cola->size()-1).first,vertice);
-		
-			cola->pop_back();
+	return pu == pv;
+}
+void GRAPH::unionTree(int u, int v, vector<vector<int>> &T){
+	int i,j,pu,pv;
+	bool bu,bv;
+	bu=bv=false;
+	unsigned int s = T.size();
+	for(i=0;i<s and (!bu or !bv);i++){
+		unsigned int ss = T[i].size();
+		for(j=0;j<ss and !bu;j++){
+			if(T[i][j]==u){
+				pu = i;
+				bu=true;
+				break;
+			}
+		}
+		for(j=0;j<ss and !bv;j++){
+			if(T[i][j]==v){
+				pv = i;
+				bv=true;
+				break;
+			}
+		}
 	}
-	return;*/
+	s = T[pv].size();
+	for(i=0;i<s;i++){
+		T[pu].push_back(T[pv][i]);
+	}
+	T.erase(T.begin()+pv);
+}
+vector<Edge> GRAPH::Kruskal(){
+	vector<Edge> MST;
+	vector<vector<int>> set_tree(Vcnt);
+	for(int i=0;i<Vcnt;i++){
+		set_tree[i].assign(1,i);
+//		cout<<i<<" ";
+	}
+	/*cout<<endl;
+	for(int i=0;i<Ecnt;i++){
+		cout<<"("<<Aristas->at(i).i<<" , "<<Aristas->at(i).j<<")";
+	}
+	cout<<endl;
+	*/
+	for(int x=0;x<Ecnt;x++){
+		if(!(findETree(Aristas->at(x).i , Aristas->at(x).j,set_tree))){
+			MST.push_back(Aristas->at(x));
+			unionTree(Aristas->at(x).i , Aristas->at(x).j,set_tree);
+		}
+	}
+	return MST;
 }
 ///---------------------------------------------------------
 class GRAPH_list : public GRAPH{
@@ -253,6 +296,7 @@ public:
 		visited = new vector<bool>(Vcnt);
 		dijkstar = new vector<pair<float,int>>(Vcnt);
 		cola = new vector<pair<float,int>>;
+		Aristas = new vector<Edge>;
 		//llenarDijkstra();
 	}
 	~GRAPH_list(){}
@@ -266,7 +310,14 @@ public:
 		if(!digraph){
 			list[A.j].push_back(make_pair(A.i,A.w));
 		}
-	//	cout<<"%"<<endl;
+		if(Aristas->size() == 0)
+		   Aristas->insert(Aristas->begin(),A);
+		else {
+			int j;
+			for(j=0;j<Aristas->size() and Aristas->at(j).w<A.w;j++){
+			}						
+			Aristas->insert(Aristas->begin()+j,A);
+		}
 	}
 	void show(){
 		for(int i=0;i<Vcnt;i++){
@@ -370,6 +421,9 @@ public:
 	bool edge(int u, int v){
 		return adj[u][v].first;
 	}
+	
+	bool findTree(){}
+	void unionTree(){}
 };
 ///---------------------------------------------------------
 int main(int argc, char *argv[]) {
@@ -378,37 +432,25 @@ int main(int argc, char *argv[]) {
 	float w;
 	cin>>v>>e;
 	GRAPH_list G(v,true);
-	G.visi_reinicio();
-//	GRAPH_adj GG(v,true);
 	for(int i=0;i<e;i++){
 		cin>>g>>c>>w;
 		Edge aux(g,c,w);
 		G.insert(aux);
-	//	GG.insert(aux);
 	}
-//	G.show();
-	//G.visi_reinicio();
-//	GG.visi_reinicio();
+	G.show();
 	clock_t inicio,fin;
-	
+	vector<Edge> Kr;
 	inicio = clock();
-	G.Dijkstra(1,0,-1);
+//	G.Dijkstra(1,0,-1);
+	Kr=G.Kruskal();
 	fin = clock();
-
-	G.mostrar(89);
+	for(int i=0;i<Kr.size();i++){
+		cout<<"("<<Kr[i].i<<","<<Kr[i].j<<")"<<" ; ";
+	}
+	cout<<endl;
+//	G.mostrar(89);
 	cout<<endl;
 	cout<<"L ->"<<(double)(fin - inicio) / CLOCKS_PER_SEC<<endl;
-//	G.show();
-	//G.dfs(0);///0 , 1 , 2 , 3 , 6 , 8 , 7 , 4 , 5 , 9 
-//	G.visi_reinicio();
-	//cout<<endl;
-	//G.bfs(0);///0 , 1 , 2 , 3 , 5 , 6 , 9 , 4 , 7 , 8 ,   niveles -> {{ 0 , } , { 1 , 2 , 3 , 5 , 6 , 9 , } , { 4 , 7 , 8 , } 
-/*	inicio = clock();
-	GG.SigismudDijkstra(1,0,-1);
-	fin = clock();
-	GG.mostrar(89);
-	cout<<endl;
-	cout<<"M ->"<<(double)(fin - inicio) / CLOCKS_PER_SEC<<endl;*/
 	system("pause");
 	return 0;
 }
