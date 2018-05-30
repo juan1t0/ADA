@@ -65,7 +65,6 @@ void GRAPH::camino(int vertice){
 		cout<< vertice<<" , ";
 		return;
 	}
-	cout<<vertice<<".";
 	camino(dijkstar->at(vertice).second);		
 	cout<< vertice<<" , ";
 	
@@ -178,7 +177,9 @@ void GRAPH::SigismudDijkstra(int vertice,float we,int pre){
 	return;
 }
 void GRAPH::Dijkstra(int vertice,float we,int pre){
-	cout<<".";
+	llenarDijkstra();
+	visi_reinicio();
+	
 	dijkstar->at(vertice).first=we;
 	dijkstar->at(vertice).second=pre;
 	cola->push_back(make_pair(we,vertice));
@@ -194,7 +195,7 @@ void GRAPH::Dijkstra(int vertice,float we,int pre){
 		cout<<endl;*/
 		cola->pop_back();
 		for (int i=0 ;i<s; i++){
-			if (visited->at(vertice)== false){
+			if (visited->at(vecinos[i].first)== false){
 				aux=we+vecinos[i].second;
 				if(dijkstar->at(vecinos[i].first).first > aux){
 					dijkstar->at(vecinos[i].first).first=aux;
@@ -216,9 +217,11 @@ void GRAPH::Dijkstra(int vertice,float we,int pre){
 		visited->at(vertice)=true;
 		
 //		cout<<"|"<<vertice<<"|";
-		cola->pop_back();
-		if(cola->size()!=0)
+	//	cola->pop_back();
+		if(cola->size()!=0){
 			vertice = cola->at(cola->size()-1).second;
+			we = cola->at(cola->size()-1).first;
+		}
 	/*	cout<<"[";
 		for(int o=0;o<cola->size();o++){
 			cout<<cola->at(o).second<<" ";
@@ -250,7 +253,7 @@ public:
 		visited = new vector<bool>(Vcnt);
 		dijkstar = new vector<pair<float,int>>(Vcnt);
 		cola = new vector<pair<float,int>>;
-		llenarDijkstra();
+		//llenarDijkstra();
 	}
 	~GRAPH_list(){}
 	int V() const{GRAPH::V();}
@@ -384,7 +387,7 @@ int main(int argc, char *argv[]) {
 	//	GG.insert(aux);
 	}
 //	G.show();
-	G.visi_reinicio();
+	//G.visi_reinicio();
 //	GG.visi_reinicio();
 	clock_t inicio,fin;
 	
@@ -392,7 +395,7 @@ int main(int argc, char *argv[]) {
 	G.Dijkstra(1,0,-1);
 	fin = clock();
 
-	G.mostrar(9);
+	G.mostrar(89);
 	cout<<endl;
 	cout<<"L ->"<<(double)(fin - inicio) / CLOCKS_PER_SEC<<endl;
 //	G.show();
