@@ -4,37 +4,51 @@
 #include <utility>
 #include <time.h>
 #include <stdlib.h>
+#include <queue>
 
 using namespace std;
 
 struct Edge  { 
 	int i,j; 
 	float w;
-Edge(int a = -1,int b = -1, float c = -1) : i(a), j(b),w(c) { }
+	Edge(int a = -1,int b = -1, float c = -1) : i(a), j(b),w(c) { }
+};
+class ComparePairFirst
+{
+public:
+	inline bool operator() (pair<float,int> &A, pair<float,int> &B){
+		return A.first > B.first;
+	}
+};
+class CompareEdgeWeight
+{
+public:
+	inline bool operator() (Edge &U, Edge &V){
+		return U.w > V.w;
+	}
 };
 
 class GRAPH {	
 public:
 	int Vcnt, Ecnt;
+	double sum;
 	bool digraph;
 	vector<bool> *visited;
-	vector<pair<float,int>> *dijkstar,*cola;
-	vector<Edge> *Aristas;
+	vector<pair<float,int>> *dijkstar;
+	priority_queue<pair<float,int>,vector<pair<float,int>>,ComparePairFirst>* cola;
+	priority_queue<Edge,vector<Edge>,CompareEdgeWeight>* Aristas;
 	
 	virtual void remove(Edge)=0;
 	virtual bool edge(int, int)=0;
 	virtual void insert(Edge A)=0;
 	virtual vector<pair<int,float>> neighbor(int)=0;
-	virtual bool findETree(int u,int v,vector<vector<int>> &T);
-	virtual void unionTree(int u,int v,vector<vector<int>> &T);
 	virtual vector<Edge> Kruskal();
-	virtual void llenarDijkstra();
 	virtual void visi_reinicio();
 	virtual void dfs(int vertice);
 	virtual void bfs(int vertice);
 	virtual bool allVisited();
-	virtual void SigismudDijkstra(int vertice,float we,int pre);
-	virtual void Dijkstra(int vertice,float we,int pre);
+	//	virtual void SigismudDijkstra(int vertice,float we,int pre);
+	virtual void Dijkstra(int vertice);
 	virtual void camino(int vertice);
 	virtual void mostrar(int v);
 	virtual int V() const;
@@ -42,14 +56,9 @@ public:
 	virtual bool directed();
 };
 
-void GRAPH::llenarDijkstra(){
-	float inflot = 1000.00;
-	dijkstar->assign(Vcnt,make_pair(inflot,-1));
-}
 void GRAPH::visi_reinicio(){
-	for(int j=0;j<Vcnt;j++){
-		visited->at(j)=false;
-	}
+	visited->clear();
+	visited->assign(Vcnt,false);
 }
 bool GRAPH::allVisited(){
 	for(int i=0;i<Vcnt;i++)
@@ -134,149 +143,148 @@ void GRAPH::bfs(int vertice){
 	}
 	cout<<endl;
 }
+/*recursive Dijkstra
 void GRAPH::SigismudDijkstra(int vertice,float we,int pre){
-	if(visited->at(vertice)== true)
-		return;
-	
-	if(pre == -1 ){
-		dijkstar->at(vertice).first=we;
-		dijkstar->at(vertice).second=pre;
-	}
-	float aux = we;
-	vector<pair<int,float>> vecinos=neighbor(vertice);
-	unsigned int s = vecinos.size();
-	for (int i=0 ;i<s; i++){
-		if (visited->at(vertice)== false){
-			aux=we+vecinos[i].second;
-			if(dijkstar->at(vecinos[i].first).first > aux){
-				dijkstar->at(vecinos[i].first).first=aux;
-				dijkstar->at(vecinos[i].first).second=vertice;
-				if(cola->size() == 0)
-					cola->insert(cola->begin(),make_pair(aux,vecinos[i].first));
-				else {
-					int j;
-					for(j=0;j<cola->size() and cola->at(j).first>=aux;j++){
-					}						
-					cola->insert(cola->begin()+j,make_pair(aux,vecinos[i].first));
-				}
-			}
-		}
-	}
-	visited->at(vertice)=true;
-	while(!(cola->size()== 0)){
-		SigismudDijkstra(cola->at(cola->size()-1).second,cola->at(cola->size()-1).first,vertice);
-		if(cola->size()!=0)
-			cola->pop_back();
-	}
-	return;
+if(visited->at(vertice)== true)
+return;
+
+if(pre == -1 ){
+dijkstar->at(vertice).first=we;
+dijkstar->at(vertice).second=pre;
 }
-void GRAPH::Dijkstra(int vertice,float we,int pre){
-	llenarDijkstra();
+float aux = we;
+vector<pair<int,float>> vecinos=neighbor(vertice);
+unsigned int s = vecinos.size();
+for (int i=0 ;i<s; i++){
+if (visited->at(vertice)== false){
+aux=we+vecinos[i].second;
+if(dijkstar->at(vecinos[i].first).first > aux){
+dijkstar->at(vecinos[i].first).first=aux;
+dijkstar->at(vecinos[i].first).second=vertice;
+if(cola->size() == 0)
+cola->insert(cola->begin(),make_pair(aux,vecinos[i].first));
+else {
+int j;
+for(j=0;j<cola->size() and cola->at(j).first>=aux;j++){
+}						
+cola->insert(cola->begin()+j,make_pair(aux,vecinos[i].first));
+}
+}
+}
+}
+visited->at(vertice)=true;
+while(!(cola->size()== 0)){
+SigismudDijkstra(cola->at(cola->size()-1).second,cola->at(cola->size()-1).first,vertice);
+if(cola->size()!=0)
+cola->pop_back();
+}
+return;
+}
+*/
+
+void GRAPH::Dijkstra(int vertice){
+	float aux,weight = 0.0;
+	unsigned int s,i;
+	int x,cont=0;
+	vector<pair<int,float> > vecinos;
+	clock_t inicio,fin;
+	
+	dijkstar->assign(Vcnt,make_pair(10000.0 , -1));
 	visi_reinicio();
-	dijkstar->at(vertice).first=we;
-	dijkstar->at(vertice).second=pre;
-	cola->push_back(make_pair(we,vertice));
-	while(!(cola->size()==0)){
-		float aux = we;
-		vector<pair<int,float>> vecinos=neighbor(vertice);
-		unsigned int s = vecinos.size();
-		cola->pop_back();
-		for (int i=0 ;i<s; i++){
-			if (visited->at(vecinos[i].first)== false){
-				aux=we+vecinos[i].second;
-				if(dijkstar->at(vecinos[i].first).first > aux){
-					dijkstar->at(vecinos[i].first).first=aux;
-					dijkstar->at(vecinos[i].first).second=vertice;
-					if(cola->size() == 0)
-						cola->insert(cola->begin(),make_pair(aux,vecinos[i].first));
-					else {
-						int j;
-						for(j=0;j<cola->size() and cola->at(j).first>=aux;j++){
-						}						
-						cola->insert(cola->begin()+j,make_pair(aux,vecinos[i].first));
-					}
+	
+	dijkstar->at(vertice).first = weight;
+	dijkstar->at(vertice).second = -1;
+	cola->push(make_pair(weight , vertice));
+	inicio = clock();
+	
+	while(!cola->empty()){
+		aux = weight;
+		vecinos = neighbor(vertice);
+		s = vecinos.size();
+		cola->pop();
+		for (i = 0 ; i < s ; i++)
+		{
+			x = vecinos[i].first;
+			if (visited->at(x) == false)
+			{
+				aux = weight + vecinos[i].second;
+				if(dijkstar->at(x).first > aux)
+				{
+					dijkstar->at(x).first = aux;
+					dijkstar->at(x).second = vertice;
+					cola->push(make_pair(aux , x));
 				}
 			}
 		}
 		visited->at(vertice)=true;
-		if(cola->size()!=0){
-			vertice = cola->at(cola->size()-1).second;
-			we = cola->at(cola->size()-1).first;
-		}
+		vertice = cola->top().second;
+		weight = cola->top().first;
 	}
+	/*	vector<pair<int,float> > vecinos = neighbor(vertice);
+	s = vecinos.size();
+	while(!cola->empty()){
+	//		cout<<cont<<" a"<<endl;
+	aux = weight;
+	x = vecinos[cont].first;
+	if (visited->at(x) == false)
+	{
+	aux = weight + vecinos[cont].second;
+	if(dijkstar->at(x).first > aux)
+	{
+	dijkstar->at(x).first = aux;
+	dijkstar->at(x).second = vertice;
+	cola->push(make_pair(aux , x));
+	}
+	}
+	cont++;
+	if(cont == s){
+	cola->pop();
+	visited->at(vertice)=true;
+	vertice = cola->top().second;
+	weight = cola->top().first;
+	cont=0;
+	vecinos = neighbor(vertice);
+	s = vecinos.size();
+	}
+	}*/
+	fin = clock();
+	cout<<"Main bucle ->"<<(double)(fin - inicio) / CLOCKS_PER_SEC<<endl;
 }
-bool GRAPH::findETree(int u,int v,vector<vector<int>> &T){
-//bool GRAPH::findTree(int u, int v, vector<vector<int>> &T){
-	int i,j,pu,pv;
-	bool bu,bv;
-	bu=bv=false;
-	unsigned int s = T.size();
-	for(i=0;i<s and (!bu or !bv);i++){
-		unsigned int ss = T[i].size();
-		for(j=0;j<ss and !bu;j++){
-			if(T[i][j]==u){
-				pu = i;
-				bu=true;
-				break;
-			}
-		}
-		for(j=0;j<ss and !bv;j++){
-			if(T[i][j]==v){
-				pv = i;
-				bv=true;
-				break;
-			}
-		}
-	}
-	return pu == pv;
+
+typedef vector<int> vi;
+vi pset;
+void init(int N){
+	pset.assign(N,0);
+	for(int i =0;i<N;i++)
+		pset[i]=i;
 }
-void GRAPH::unionTree(int u, int v, vector<vector<int>> &T){
-	int i,j,pu,pv;
-	bool bu,bv;
-	bu=bv=false;
-	unsigned int s = T.size();
-	for(i=0;i<s and (!bu or !bv);i++){
-		unsigned int ss = T[i].size();
-		for(j=0;j<ss and !bu;j++){
-			if(T[i][j]==u){
-				pu = i;
-				bu=true;
-				break;
-			}
-		}
-		for(j=0;j<ss and !bv;j++){
-			if(T[i][j]==v){
-				pv = i;
-				bv=true;
-				break;
-			}
-		}
-	}
-	s = T[pv].size();
-	for(i=0;i<s;i++){
-		T[pu].push_back(T[pv][i]);
-	}
-	T.erase(T.begin()+pv);
+int find_set(int i){
+	if(pset[i]==i)
+		return pset[i];
+	return pset[i]=find_set(pset[i]);
+}
+bool issameset(int i, int j){
+	return find_set(i)==find_set(j);
+}
+void joinset(int i, int j){
+	pset[find_set(i)]=find_set(j);
 }
 vector<Edge> GRAPH::Kruskal(){
 	vector<Edge> MST;
-	vector<vector<int>> set_tree(Vcnt);
-	for(int i=0;i<Vcnt;i++){
-		set_tree[i].assign(1,i);
-//		cout<<i<<" ";
-	}
-	/*cout<<endl;
-	for(int i=0;i<Ecnt;i++){
-		cout<<"("<<Aristas->at(i).i<<" , "<<Aristas->at(i).j<<")";
-	}
-	cout<<endl;
-	*/
-	for(int x=0;x<Ecnt;x++){
-		if(!(findETree(Aristas->at(x).i , Aristas->at(x).j,set_tree))){
-			MST.push_back(Aristas->at(x));
-			unionTree(Aristas->at(x).i , Aristas->at(x).j,set_tree);
+	//vector<vector<int>> set_tree(Vcnt);
+	init(Vcnt);
+	//cout<<"|"<<Vcnt<<" "<<pset.size()<<"|"<<endl;
+	while(!Aristas->empty()){
+		//	cout<<Aristas->top().i<<" , "<<Aristas->top().j<<endl;
+		if(!(issameset(Aristas->top().i,Aristas->top().j))){
+			//	cout<<"- ";
+			MST.push_back(Aristas->top());
+			sum+=Aristas->top().w;
+			joinset(Aristas->top().i,Aristas->top().j);
 		}
+		Aristas->pop();
 	}
+	//	cout<<endl;
 	return MST;
 }
 ///---------------------------------------------------------
@@ -293,10 +301,10 @@ public:
 			vector<pair<int,float>> temp;
 			list.push_back(temp);
 		}
-		visited = new vector<bool>(Vcnt);
+		visited = new vector<bool>;
 		dijkstar = new vector<pair<float,int>>(Vcnt);
-		cola = new vector<pair<float,int>>;
-		Aristas = new vector<Edge>;
+		cola = new priority_queue<pair<float,int>,vector<pair<float,int>>,ComparePairFirst>;
+		Aristas = new priority_queue<Edge,vector<Edge>,CompareEdgeWeight>;
 		//llenarDijkstra();
 	}
 	~GRAPH_list(){}
@@ -310,14 +318,7 @@ public:
 		if(!digraph){
 			list[A.j].push_back(make_pair(A.i,A.w));
 		}
-		if(Aristas->size() == 0)
-		   Aristas->insert(Aristas->begin(),A);
-		else {
-			int j;
-			for(j=0;j<Aristas->size() and Aristas->at(j).w<A.w;j++){
-			}						
-			Aristas->insert(Aristas->begin()+j,A);
-		}
+		Aristas->push(A);
 	}
 	void show(){
 		for(int i=0;i<Vcnt;i++){
@@ -349,7 +350,7 @@ public:
 				list[R.j].erase(list[R.j].begin()+x);
 		}
 		if(find(R.i,list[R.j],x))
-			list[R.j].erase(list[R.j].begin()+x);
+				 list[R.j].erase(list[R.j].begin()+x);
 	}
 	bool edge(int u, int v){
 		unsigned int x;
@@ -358,7 +359,7 @@ public:
 	vector<pair<int,float>> neighbor(int v){
 		return list[v];
 	}
-
+	
 };
 ///---------------------------------------------------------
 class GRAPH_adj : public GRAPH {
@@ -373,8 +374,7 @@ public:
 			adj[i].assign(V, make_pair(false,-1));
 		visited = new vector<bool>(Vcnt);
 		dijkstar = new vector<pair<float,int>>(Vcnt);
-		cola = new vector<pair<float,int>>;
-		llenarDijkstra();
+		cola = new priority_queue<pair<float,int>,vector<pair<float,int>>,ComparePairFirst>;
 	}
 	~GRAPH_adj(){}
 	int V() const{GRAPH::V();}
@@ -431,26 +431,32 @@ int main(int argc, char *argv[]) {
 	int g,c;
 	float w;
 	cin>>v>>e;
-	GRAPH_list G(v,true);
+	GRAPH_list G(v);
 	for(int i=0;i<e;i++){
 		cin>>g>>c>>w;
 		Edge aux(g,c,w);
 		G.insert(aux);
 	}
-	G.show();
+	//	G.show();
 	clock_t inicio,fin;
 	vector<Edge> Kr;
+	//priority_queue<Edge,vector<Edge>,CompareEdgeWeight> *a = G.Aristas;
+	//cout<<"||"<<endl;
+	//cout<<"sss"<<endl;
+	
 	inicio = clock();
-//	G.Dijkstra(1,0,-1);
+	//G.Dijkstra(1);
 	Kr=G.Kruskal();
 	fin = clock();
-	for(int i=0;i<Kr.size();i++){
-		cout<<"("<<Kr[i].i<<","<<Kr[i].j<<")"<<" ; ";
-	}
+	
+	//	for(int i=0;i<Kr.size();i++)
+	//		cout<<"("<<Kr[i].i<<","<<Kr[i].j<<")"<<" ; ";
+	
 	cout<<endl;
-//	G.mostrar(89);
-	cout<<endl;
-	cout<<"L ->"<<(double)(fin - inicio) / CLOCKS_PER_SEC<<endl;
+	//G.mostrar(89);
+	//cout<<endl;
+	cout<<endl<<Kr.size()<<" **"<<G.sum<<endl;
+	cout<<"todo ->"<<(double)(fin - inicio) / CLOCKS_PER_SEC<<endl;
 	system("pause");
 	return 0;
 }
