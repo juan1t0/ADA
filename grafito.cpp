@@ -41,10 +41,7 @@ public:
 	class adjIterator;
 	
 	void visi_reinicio(){
-		//visited.clear();
-		for(int j=0;j<Vcnt;j++){
-			visited->at(j)=false;
-		}
+		visited.assign(Vcnt,False);
 	}
 	void dfs(int vertice){
 		cout<<vertice<<" ";
@@ -54,7 +51,6 @@ public:
 				dfs(i);
 			}
 		}
-//		cout<<endl;
 		return;
 	}
 	void bfs(int vertice){
@@ -125,23 +121,5 @@ int main(int argc, char *argv[]) {
 	show(G);
 	G.visi_reinicio();
 	G.dfs(0);
-	G.visi_reinicio();
-	G.dfs(1);
-	G.visi_reinicio();
-	G.dfs(2);
-	G.visi_reinicio();
-	G.dfs(3);
-	G.visi_reinicio();
-	G.dfs(4);
-	G.visi_reinicio();
-	G.dfs(5);
-	G.visi_reinicio();
-	G.dfs(6);
-	G.visi_reinicio();
-	G.dfs(7);
-	G.visi_reinicio();
-	G.dfs(8);
-	G.visi_reinicio();
-	G.dfs(9);
 	return 0;
 }
